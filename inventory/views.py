@@ -91,19 +91,22 @@ class InventoryNetworkDevicesView(MyModelView):
         "networkdevice": {  # "default": [{"id":None}],
             "validators": [ItemsRequiredExactly()],
             "min_entries": 1,
-            "max_entries": 3
+            "max_entries": 1
         },
         # "name": {"validators": [InputRequired()]},
         "inventorynumber": {"validators": [InputRequired(), Unique(db.session, Inventory, Inventory.inventorynumber)]}
     }
     form_columns = (
-        'inventorynumber', 'networkdevice', 'responsible', 'bought_at',
-        'location', "active")
+         'networkdevice','inventorynumber', 'responsible',  'bought_at',
+        'location', "active", "created_at"
+    )
     column_labels = dict(
-        responsible='Verantwortlicher', inventorynumber="Inventarnummer", bought_at="Gekauft am",
-        created_at='Erstellt am', active='Aktiv', location="Standort", networkdevice='Netzwerfähiges Gerät')
+        inventorynumber="Inventarnummer", networkdevice='Netzwerfähiges Gerät', responsible='Verantwortlicher', bought_at="Gekauft am",
+        location="Standort", active='Aktiv', created_at='Erstellt am'
+    )
     column_descriptions = dict(
-
+        inventorynumber="TODO", networkname='TODO', responsible='TODO',
+        bought_at="TODO",location="TODO", active='TODO', created_at='TODO'
     )
     column_list = (
         #        "id",
@@ -114,6 +117,9 @@ class InventoryNetworkDevicesView(MyModelView):
         "typ",
         "Standort",
         "bought_at"
+    )
+    form_excluded_columns = (
+        "created_at"
     )
     #  column_editable_list = ("id")
     # column_default_sort = (Systems.name)
