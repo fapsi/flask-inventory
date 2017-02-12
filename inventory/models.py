@@ -1,5 +1,14 @@
+"""
+TODO:
+- Annotations, Comments etc..
+- Add rent for a inventory-device
+- Add models for licence-stuff
+- Add model for otherdevice
+- Export models into small files
+"""
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import UserMixin, RoleMixin
+# TODO: may be used for logging "from flask import current_app", "current_app.logger.info()"
 
 db = SQLAlchemy()
 
