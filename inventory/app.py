@@ -4,7 +4,7 @@ from flask_admin import helpers as admin_helpers
 from flask_security import Security, SQLAlchemyUserDatastore, current_user
 
 from inventory.models import db, User, Role, Ip, Inventory, Location, Networkdevice, Otherdevice, Networkdevicetype, Otherdevicetype
-from inventory.views import MyModelView, InventoryNetworkDevicesView, IpAddressesView
+from inventory.views import MyModelView, InventoryNetworkDevicesView, IpAddressesView, InventoryOtherDevicesView
 
 # Create Flask application
 app = Flask(__name__)
@@ -40,8 +40,10 @@ admin.add_view(IpAddressesView(Ip, db.session, category='Ip-Addressverwaltung', 
 
 admin.add_view(IpAddressesView(Ip, db.session, category='Lizenzen', name='Alle Softwarelizenzen', endpoint='todo3'))  # TODO
 
-admin.add_view(InventoryNetworkDevicesView(Inventory, db.session, endpoint='inv', category='Inventar',name='Netzwerkfähige Geräte'))
-admin.add_view(InventoryNetworkDevicesView(Inventory, db.session, endpoint='todo', category='Inventar',name='Andere inventarisierte Geräte')) #TODO
+admin.add_view(InventoryNetworkDevicesView(Inventory, db.session, endpoint='inv_network_active', category='Inventar',name='Netzwerkfähige Geräte'))
+admin.add_view(InventoryOtherDevicesView(Inventory, db.session, endpoint='inv_other_active', category='Inventar',name='Andere inventarisierte Geräte')) #TODO
+admin.add_view(InventoryNetworkDevicesView(Inventory, db.session, endpoint='inv_network_inactive', category='Inventar',name='Netzwerkfähige Geräte (ausgemustert)'))
+admin.add_view(InventoryOtherDevicesView(Inventory, db.session, endpoint='inv_other_inactive', category='Inventar',name='Andere inventarisierte Geräte (ausgemustert)')) #TODO
 
 admin.add_view(MyModelView(Inventory, db.session, category='Erweitert', name='Alle Inventarnummern (ohne zugeordnete Geräte)'))
 admin.add_view(MyModelView(Networkdevice, db.session, category='Erweitert', name='Netzwerkfähige Geräte (ohne Inventarnummer)'))

@@ -8,6 +8,7 @@ TODO:
 """
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import UserMixin, RoleMixin
+import datetime
 # TODO: may be used for logging "from flask import current_app", "current_app.logger.info()"
 
 db = SQLAlchemy()
@@ -80,7 +81,7 @@ class Inventory(db.Model):
     responsible = db.relationship(User, backref=db.backref(
         'netzwerkfähige Geräte', uselist=False, cascade="all, delete-orphan", single_parent=True))
     bought_at = db.Column(db.Date())
-    created_at = db.Column(db.DateTime())
+    created_at = db.Column(db.DateTime(),default=datetime.datetime.now)
     active = db.Column(db.Boolean(), default=True)
     location_id = db.Column(db.Integer(), db.ForeignKey("location.id"))
     location = db.relationship(Location, backref=db.backref('TODO'))
@@ -109,7 +110,7 @@ class Networkdevice(db.Model):
                                                               cascade="all, delete-orphan", single_parent=True))  # ))
 
     networkdevicetype_id = db.Column(db.Integer, db.ForeignKey("networkdevicetype.id"))
-    networkdevicetype = db.relationship(Networkdevicetype, backref=db.backref(
+    networkdevicetype = db.relationship(Networkdevicetype, foreign_keys=[networkdevicetype_id], backref=db.backref(
         'networkdevice', uselist=False, cascade="all, delete-orphan", single_parent=True))  # ))
 
     cpu = db.Column(db.String(45))
@@ -140,7 +141,7 @@ class Otherdevice(db.Model):
                                                               cascade="all, delete-orphan", single_parent=True))  # ))
 
     otherdevicetype_id = db.Column(db.Integer, db.ForeignKey("otherdevicetype.id"))
-    otherdevicetype = db.relationship(Otherdevicetype, backref=db.backref(
+    otherdevicetype = db.relationship(Otherdevicetype, foreign_keys=[otherdevicetype_id], backref=db.backref(
         'otherdevice', uselist=False, cascade="all, delete-orphan", single_parent=True))  # ))
 
     vendor = db.Column(db.String(45))
@@ -149,4 +150,4 @@ class Otherdevice(db.Model):
     description = db.Column(db.String(45))
 
     def __str__(self):
-        return self.networkname
+        return self.description
