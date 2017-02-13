@@ -19,9 +19,9 @@ try:
     from wtforms.validators import InputRequired
 except ImportError:
     from wtforms.validators import Required as InputRequired
-from inventory.models import db, User, Ip, Inventory, Location, Networkdevice, Networkdevicetype, Otherdevice, Otherdevicetype
+from inventory.models import db, User, Ip, Inventory, Location, Networkdevice, Networkdevicetype, Otherdevice, Otherdevicetype, Role, roles_users
 # TODO: may be used for logging "from flask import current_app"
-
+from flask import current_app
 
 # Create customized model view class
 class MyModelView(sqla.ModelView):
@@ -110,6 +110,7 @@ class InventoryNetworkDevicesView(MyModelView):
     column_list = (
         "ip",
         "networkname",
+        "mac",
         "networkdevicetype_",
         "inventorynumber",
         "responsible_",
@@ -119,12 +120,13 @@ class InventoryNetworkDevicesView(MyModelView):
         "created_at"
     )
     column_labels = dict(
-        ip="IP-Addresse", networkname='Netzwerkname', networkdevicetype_="Geräte-Typ", inventorynumber="Inventarnummer",
+        ip="IP-Adresse", networkname='Netzwerkname',mac="MAC-Adresse" , networkdevicetype_="Geräte-Typ", inventorynumber="Inventarnummer",
         responsible_='Verantwortlicher', location_="Standort", networkdevice='Netzwerfähiges Gerät',
         active='Aktiv', bought_at="Gekauft am", created_at='Erstellt am'
     )
     column_descriptions = dict(
         ip="Die zugeordnete IP-Adresse des Systems.", networkname='Der Computeranmeldename des Gerätes.',
+        mac="Die Hardware-Adresse des Haupt-Netzwerkadapters.",
         networkdevicetype_="Typ des netzwerkfähigen Gerätes.",
         inventorynumber="Eindeutige Inventarnummer des Gerätes.",
         responsible_="Der für das Gerät Verantwortliche (Nutzer kann hier nur zugefügt werden, wenn er Berechtigung <verantwortlicher> besitzt).",
@@ -170,30 +172,46 @@ class InventoryNetworkDevicesView(MyModelView):
     # TODO: needed? default sortable is problemativ becauese overriding column_list
     #  column_editable_list = ("id")
     # column_default_sort = (Systems.name)
-    # TODO filter for ajax ip-requests
-    '''     def create_form(self):
-        return self._use_filtered_parent2(
+    # TODO: Allow Ip-Selection from current used ip
+    # Override possible drop down values in create form for ip and responsible
+    def create_form(self):
+        return self._use_filtered_create(
             super(InventoryNetworkDevicesView, self).create_form()
         )
 
+    def _use_filtered_create(self, form):
+        form.networkdevice[0].ip.query_factory = self._get_parent_list_ip_create
+        form.responsible.query_factory = self._get_parent_list_responsible_create
+        return form
+
+    def _get_parent_list_ip_create(self):
+        return Ip.query.filter(Ip.networkdevice_id == None).all()
+
+    def _get_parent_list_responsible_create(self):
+        return self.session.query(User).join(roles_users).join(Role).filter(Role.name == "responsible").all()
+
+    # Override possible drop down values in edit form for ip and responsible
     def edit_form(self, obj):
-        return self._use_filtered_parent(
+        return self._use_filtered_edit(
             super(InventoryNetworkDevicesView, self).edit_form(obj)
         )
 
-    def _use_filtered_parent(self, form):
-        form.networkdevice[0].ip.query_factory = self._get_parent_list
+    def _use_filtered_edit(self, form):
+        self.temp_ip_edit_id = 0
+        if len(form.networkdevice) > 0 and form.networkdevice[0].ip.data != None:
+            self.temp_ip_edit_id = form.networkdevice[0].ip.data.id # Pretty ugly and fucked up, but there seems to be no other way
+        #current_app.logger.error(str(form.networkdevice[0].ip.data.id))
+        form.networkdevice[0].ip.query_factory = self._get_parent_list_ip_edit
+        form.responsible.query_factory = self._get_parent_list_responsible_edit
         return form
 
-    def _get_parent_list(self):
-        return Ip.query.filter((Ip.networkdevice_id == None) | (Ip.networkdevice_id == Networkdevice.id)).all()
+    def _get_parent_list_ip_edit(self):
+        return Ip.query.filter((Ip.networkdevice_id == None) | (Ip.id == self.temp_ip_edit_id)).all()
 
-    def _use_filtered_parent2(self, form):
-        form.networkdevice[0].ip.query_factory = self._get_parent_list2
-        return form
+    def _get_parent_list_responsible_edit(self):
+        return self.session.query(User).join(roles_users).join(Role).filter(Role.name == "responsible").all()
 
-    def _get_parent_list2(self):
-        return Ip.query.filter(Ip.networkdevice_id == None).all()'''
+
     # TODO: Do an Ip-change History:
     '''def after_model_change(self, form, nd, is_created):
         current_app.logger.info("Form: "+str(form.networkdevice[0].ip.data.id))
@@ -210,7 +228,7 @@ class InventoryNetworkDevicesView(MyModelView):
             if len(ids) != 1:
                 flash("Geräte bitte nur einzeln deinventarisiern, um Fehler zu vermeiden.")
                 return
-            rows = self.session.query(Inventory).filter(Inventory.id == ids[0]).all()
+            rows = self.session.query(Inventory).filter(Inventory.id == ids[0]).all() # TODO: replace with self.model.filter ??
             if len(rows) != 1:
                 flash("Inventarisiertes Gerät mit id " + str(ids[0]) + " wurde nicht gefunden.")
                 return
@@ -239,6 +257,7 @@ class InventoryNetworkDevicesView(MyModelView):
                 Inventory.id.label("id"),
                 (func.IF(Ip.internetaccess > 0, Ip.address, Ip.address + " (nur intern)")).label("ip"),
                 Networkdevice.networkname.label("networkname"),
+                Networkdevice.mac.label("mac"),
                 Networkdevicetype.name.label("networkdevicetype_"),
                 Inventory.inventorynumber.label("inventorynumber"),
                 (User.email + " " + User.first_name).label("responsible_"),
@@ -465,8 +484,25 @@ class IpAddressesView(MyModelView):
         :return:
         """
         if self.endpoint == "ip_free":
-            return super(MyModelView, self).get_query().filter(Ip.networkdevice_id == None)
+            return super(MyModelView, self).get_query().filter(self.model.networkdevice_id == None)
         elif self.endpoint == "ip_notfree":
-            return super(MyModelView, self).get_query().filter(Ip.networkdevice_id != None)
+            return super(MyModelView, self).get_query().filter(self.model.networkdevice_id != None)
         else:
             return super(MyModelView, self).get_query()
+
+
+    def get_count_query(self):
+        """
+
+        :return:
+        """
+        if self.endpoint == "ip_free":
+            return (
+                self.session.query(func.count('*')).filter(self.model.networkdevice_id == None)
+            )
+        elif self.endpoint == "ip_notfree":
+            return (
+                self.session.query(func.count('*')).filter(self.model.networkdevice_id != None)
+            )
+        else:
+            return super(MyModelView, self).get_count_query()

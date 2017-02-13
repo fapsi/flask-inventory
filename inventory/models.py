@@ -104,7 +104,7 @@ class Networkdevice(db.Model):
     __tablename__ = 'networkdevice'
     id = db.Column(db.Integer, primary_key=True)
     networkname = db.Column(db.String(45))
-
+    mac = db.Column(db.String(45), default="00:80:41:ae:fd:7e")
     inventory_id = db.Column(db.Integer, db.ForeignKey("inventory.id"))
     inventory = db.relationship(Inventory, backref=db.backref('networkdevice',
                                                               cascade="all, delete-orphan", single_parent=True))  # ))
@@ -115,8 +115,8 @@ class Networkdevice(db.Model):
 
     cpu = db.Column(db.String(45))
     ram = db.Column(db.String(45))
-    ram_details = db.Column(db.String(45))
-    mainboard = db.Column(db.String(45))
+    ram_details = db.Column(db.String(45), default="")
+    mainboard = db.Column(db.String(45), default="")
     description = db.Column(db.String(45))
 
     def __str__(self):
