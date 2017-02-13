@@ -5,14 +5,16 @@ TODO:
 - Add view for otherdevices (may be generalized with networkdevice)
 - Add view for Licenses
 """
-from flask import Flask, url_for, redirect, render_template, request, abort
+from flask import Flask, url_for, redirect, render_template, request, abort, flash
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla.validators import Unique
 from flask_admin.model.form import InlineFormAdmin
+from flask_admin.actions import action
+
 from flask_security import current_user
 from sqlalchemy.sql import func
 from wtforms import ValidationError
-
+import gettext
 try:
     from wtforms.validators import InputRequired
 except ImportError:
@@ -176,6 +178,20 @@ class InventoryNetworkDevicesView(MyModelView):
     def __unicode__(self):
         return self.name
 
+    @action('deinventorize', 'Deinventarisieren', 'Sollen die Geräte wirklich deinventarisiert werden?')
+    def action_deinventorize(self, ids):
+        if len(ids) != 1:
+            flash("Geräte bitte nur einzeln deinventarisiern, um Fehler zu vermeiden."+str())
+            pass
+        qry = Inventory.query.filter(Inventory.id == ids[0])
+        rows = qry.all()
+        if len(rows) != 1:
+            flash("Inventarisiertes Gerät mit id " + str(ids[0]) + " wurde nicht gefunden.")
+            pass
+        #TODO: Free IP,
+        flash("Gerät mit Inventarnummer <" + str(rows[0].inventorynumber) + "> wurde deinventarisiert. ")
+        pass
+
     def get_query(self):
         return (
             self.session.query(
@@ -248,8 +264,8 @@ class IpAddressesView(MyModelView):
         :return:
         """
         if self.endpoint == "ip_free":
-            return super(MyModelView, self).get_query().filter(Ip.networkdevice_id.is_(None))
+            return super(MyModelView, self).get_query().filter(Ip.networkdevice_id == None)
         elif self.endpoint == "ip_notfree":
-            return super(MyModelView, self).get_query().filter(Ip.networkdevice_id.isnot(None))
+            return super(MyModelView, self).get_query().filter(Ip.networkdevice_id != None)
         else:
             return super(MyModelView, self).get_query()
