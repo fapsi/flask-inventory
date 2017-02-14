@@ -199,7 +199,7 @@ class InventoryNetworkDevicesView(MyModelView):
     def _use_filtered_edit(self, form):
         self.temp_ip_edit_id = 0
         if len(form.networkdevice) > 0 and form.networkdevice[0].ip.data != None:
-            self.temp_ip_edit_id = form.networkdevice[0].ip.data.id # Pretty ugly and fucked up, but there seems to be no other way
+            self.temp_ip_edit_id = form.networkdevice[0].ip.data.id # Pretty ugly and fucked up, but there seems to be no other easy way
         #current_app.logger.error(str(form.networkdevice[0].ip.data.id))
         form.networkdevice[0].ip.query_factory = self._get_parent_list_ip_edit
         form.responsible.query_factory = self._get_parent_list_responsible_edit
