@@ -1,4 +1,4 @@
-import flask_admin
+import flask_admin, flask_wtf, os
 from flask import Flask, url_for, redirect, render_template, request, abort
 from flask_admin import helpers as admin_helpers
 from flask_security import Security, SQLAlchemyUserDatastore, current_user
@@ -6,21 +6,36 @@ from flask_security import Security, SQLAlchemyUserDatastore, current_user
 from inventory.models import db, User, Role, Ip, Inventory, Location, Networkdevice, Otherdevice, Networkdevicetype, Otherdevicetype
 from inventory.views import MyModelView, InventoryNetworkDevicesView, IpAddressesView, InventoryOtherDevicesView
 
+from flask_apscheduler import APScheduler
+#from inventory.jobs.job1 import job1
+
+
+
 # Create Flask application
 app = Flask(__name__)
 # Load configuration stuff
 app.config.from_pyfile('config.py')
 # Connect app with db
 db.init_app(app)
+app.config[''] = True # Das kannst du auch als variable in die config.py schreiben
+flask_wtf.CSRFProtect(app)
 
 # Setup Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
+# Setup IP-Monitoring Job
+from inventory.jobs.monitoring import ping_job  # important: Not delete, needed to import the in the config file specified job
+if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # Prevent second execution of job in debug-mode
+    scheduler = APScheduler()
+    scheduler.init_app(app)
+    scheduler.start()
+
 # Flask views
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 # Create admin
 admin = flask_admin.Admin(
@@ -52,6 +67,8 @@ admin.add_view(MyModelView(Networkdevicetype, db.session, category='Erweitert', 
 admin.add_view(MyModelView(Otherdevicetype, db.session, category='Erweitert', name='Typen anderer Geräte'))
 admin.add_view(MyModelView(Location, db.session, category='Erweitert', name='Verfügbare Standorte'))
 admin.add_view(MyModelView(Ip, db.session, category='Erweitert', name='Verfügbare IPs'))
+
+
 
 # define a context processor for merging flask-admin's template context into the
 # flask-security views.
