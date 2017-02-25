@@ -3,13 +3,15 @@ from flask import Flask, url_for, redirect, render_template, request, abort
 from flask_admin import helpers as admin_helpers
 from flask_security import Security, SQLAlchemyUserDatastore, current_user
 
+from flask_mail import Mail
+
+
+
 from inventory.models import db, User, Role, Ip, Inventory, Location, Networkdevice, Otherdevice, Networkdevicetype, Otherdevicetype
-from inventory.views import MyModelView, InventoryNetworkDevicesView, IpAddressesView, InventoryOtherDevicesView
+from inventory.views import MyModelView, InventoryNetworkDevicesView, IpAddressesView, InventoryOtherDevicesView,ExtendedRegisterForm
 
 from flask_apscheduler import APScheduler
 #from inventory.jobs.job1 import job1
-
-
 
 # Create Flask application
 app = Flask(__name__)
@@ -17,12 +19,18 @@ app = Flask(__name__)
 app.config.from_pyfile('config.py')
 # Connect app with db
 db.init_app(app)
-app.config[''] = True # Das kannst du auch als variable in die config.py schreiben
+
+mail = Mail(app)
+
 flask_wtf.CSRFProtect(app)
 
+
+
 # Setup Flask-Security
+
+
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+security = Security(app, user_datastore, register_form = ExtendedRegisterForm)
 
 # Setup IP-Monitoring Job
 from inventory.jobs.monitoring import ping_job  # important: Not delete, needed to import the in the config file specified job
@@ -37,12 +45,13 @@ def index():
     return render_template('index.html')
 
 
+
 # Create admin
 admin = flask_admin.Admin(
     app,
     'VKM: IT-Inventar',
-    base_template='my_master.html',
-    template_mode='bootstrap3',
+    base_template='mybase.html',
+    template_mode='bootstrap3'
 )
 
 # Add model views

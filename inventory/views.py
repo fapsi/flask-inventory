@@ -23,6 +23,16 @@ from inventory.models import db, User, Ip, Inventory, Location, Networkdevice, N
 # TODO: may be used for logging "from flask import current_app"
 from flask import current_app
 
+
+from flask_security.forms import RegisterForm, Required, StringField
+
+class ExtendedRegisterForm(RegisterForm):
+    def __init__(self, *args, **kwargs):
+        super(RegisterForm, self).__init__(*args, **kwargs)
+
+    first_name = StringField(label="Vorname", id="first_name", validators=[Required()])
+    last_name = StringField(label="Nachname", id="last_name", validators=[Required()])
+
 # Create customized model view class
 class MyModelView(sqla.ModelView):
     def is_accessible(self):
@@ -506,3 +516,4 @@ class IpAddressesView(MyModelView):
             )
         else:
             return super(MyModelView, self).get_count_query()
+
