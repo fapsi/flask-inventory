@@ -4,11 +4,13 @@ from flask_admin import helpers as admin_helpers
 from flask_security import Security, SQLAlchemyUserDatastore, current_user
 
 from flask_mail import Mail
-
-
-
 from inventory.models import db, User, Role, Ip, Inventory, Location, Networkdevice, Otherdevice, Networkdevicetype, Otherdevicetype
-from inventory.views import MyModelView, InventoryNetworkDevicesView, IpAddressesView, InventoryOtherDevicesView,ExtendedRegisterForm
+from inventory.views.protected import ProtectedModelView
+from inventory.views.ip import IpAddressesView
+from inventory.views.user import UserAdminView
+from inventory.views.register import ExtendedRegisterForm
+from inventory.views.networkdevice import InventoryNetworkDevicesView
+from inventory.views.otherdevice import InventoryOtherDevicesView
 
 from flask_apscheduler import APScheduler
 #from inventory.jobs.job1 import job1
@@ -55,8 +57,8 @@ admin = flask_admin.Admin(
 )
 
 # Add model views
-admin.add_view(MyModelView(User, db.session, category='Nutzerverwaltung', name='Benutzer/Verantwortliche'))
-admin.add_view(MyModelView(Role, db.session, category='Nutzerverwaltung', name='Berechtigungen'))
+admin.add_view(UserAdminView(User, db.session, name='Benutzer/Verantwortliche', category='Nutzerverwaltung'))
+admin.add_view(ProtectedModelView(Role, db.session, name='Berechtigungen', category='Nutzerverwaltung'))
 
 admin.add_view(IpAddressesView(Ip, db.session, category='Ip-Addressverwaltung', name='Alle IPs', endpoint='ip_all'))
 admin.add_view(IpAddressesView(Ip, db.session, category='Ip-Addressverwaltung', name='Freie IPs', endpoint='ip_free'))
@@ -69,13 +71,13 @@ admin.add_view(InventoryOtherDevicesView(Inventory, db.session, endpoint='inv_ot
 admin.add_view(InventoryNetworkDevicesView(Inventory, db.session, endpoint='inv_network_inactive', category='Inventar',name='Netzwerkfähige Geräte (ausgemustert)'))
 admin.add_view(InventoryOtherDevicesView(Inventory, db.session, endpoint='inv_other_inactive', category='Inventar',name='Andere inventarisierte Geräte (ausgemustert)')) #TODO
 
-admin.add_view(MyModelView(Inventory, db.session, category='Erweitert', name='Alle Inventarnummern (ohne zugeordnete Geräte)'))
-admin.add_view(MyModelView(Networkdevice, db.session, category='Erweitert', name='Netzwerkfähige Geräte (ohne Inventarnummer)'))
-admin.add_view(MyModelView(Otherdevice, db.session, category='Erweitert', name='Andere Geräte (ohne Inventarnummer)'))
-admin.add_view(MyModelView(Networkdevicetype, db.session, category='Erweitert', name='Typen netzwerkfähiger Geräte'))
-admin.add_view(MyModelView(Otherdevicetype, db.session, category='Erweitert', name='Typen anderer Geräte'))
-admin.add_view(MyModelView(Location, db.session, category='Erweitert', name='Verfügbare Standorte'))
-admin.add_view(MyModelView(Ip, db.session, category='Erweitert', name='Verfügbare IPs'))
+admin.add_view(ProtectedModelView(Inventory, db.session, category='Erweitert', name='Alle Inventarnummern (ohne zugeordnete Geräte)'))
+admin.add_view(ProtectedModelView(Networkdevice, db.session, category='Erweitert', name='Netzwerkfähige Geräte (ohne Inventarnummer)'))
+admin.add_view(ProtectedModelView(Otherdevice, db.session, category='Erweitert', name='Andere Geräte (ohne Inventarnummer)'))
+admin.add_view(ProtectedModelView(Networkdevicetype, db.session, category='Erweitert', name='Typen netzwerkfähiger Geräte'))
+admin.add_view(ProtectedModelView(Otherdevicetype, db.session, category='Erweitert', name='Typen anderer Geräte'))
+admin.add_view(ProtectedModelView(Location, db.session, category='Erweitert', name='Verfügbare Standorte'))
+admin.add_view(ProtectedModelView(Ip, db.session, category='Erweitert', name='Verfügbare IPs'))
 
 
 
